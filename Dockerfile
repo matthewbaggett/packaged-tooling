@@ -3,6 +3,9 @@
 FROM ubuntu:focal AS builder-precursor
 ARG PHP_EXTENSIONS=filter,tokenizer,dom,mbstring,phar
 WORKDIR /build
+ENV DEBIAN_FRONTEND="teletype" \
+    TERM=xterm-256color \
+    DEFAULT_TZ='Europe/London'
 # hadolint ignore=DL3008
 RUN apt-get -qq update && \
     apt-get -yqq install --no-install-recommends \
