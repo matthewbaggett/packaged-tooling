@@ -1,11 +1,12 @@
 # checkov:skip=CKV_DOCKER_2 Healthcheck makes no sense here.
 # checkov:skip=CKV_DOCKER_3 user cannot be determined at this stage.
-FROM ubuntu:focal
+FROM ubuntu:focal AS builder-precursor
 ARG PHP_EXTENSIONS=filter,tokenizer,dom,mbstring,phar
 WORKDIR /build
 # hadolint ignore=DL3008
 RUN apt-get -qq update && \
     apt-get -yqq install --no-install-recommends \
+      ca-certificates \
       curl \
       wget \
       build-essential \
@@ -35,6 +36,7 @@ RUN spc build \
         --build-micro \
         --enable-zts
 
+FROM builder-precursor AS builder-phar
 ARG PHAR_DOWNLOAD_URL
 ARG OUTPUT_BIN_NAME
 WORKDIR /build

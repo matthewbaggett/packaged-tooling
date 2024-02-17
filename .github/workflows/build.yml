@@ -38,6 +38,7 @@ jobs:
           docker buildx build \
             --progress plain \
             --tag matthewbaggett/packaged-tooling:${{ matrix.phar }} \
+            --target builder-phar \
             --file ./Dockerfile \
             --load \
             --build-arg PHAR_DOWNLOAD_URL=${{ matrix.source }} \
