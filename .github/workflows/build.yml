@@ -1,0 +1,57 @@
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        phar:
+          - php-cs-fixer
+        platform:
+          - linux/amd64
+          - linux/arm64
+        include:
+          - phar: php-cs-fixer
+            source: https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/download/v3.49.0/php-cs-fixer.phar
+            extensions: filter,tokenizer,dom,mbstring
+    steps:
+    - name: "Checkout"
+      uses: actions/checkout@v4
+
+    - name: "Setup: QEMU"
+      uses: docker/setup-qemu-action@v3
+
+    - name: "Setup: Buildx"
+      uses: docker/setup-buildx-action@v3
+      with:
+        install: true
+        platforms: ${{ matrix.platform }}
+
+    - name: "Build: ${{ matrix.phar }}"
+      run: |
+        docker buildx build \
+          --progress plain \
+          --tag matthewbaggett/packaged-tooling:${{ matrix.phar }} \
+          --file ./Dockerfile \
+          --build-arg PHAR_DOWNLOAD_URL=${{ matrix.source }} \
+          --build-arg PHAR_EXTENSIONS=${{ matrix.extensions }} \
+          --build-arg OUTPUT_BIN_NAME=${{ matrix.phar }} \
+          .
+        
+        docker create \
+          --name extract-${{ matrix.phar }}-${{ matrix.platform }} \
+          matthewbaggett/packaged-tooling:${{ matrix.phar }}
+        
+        docker cp \
+            extract-${{ matrix.phar }}-${{ matrix.platform }}:/build/bin/${{ matrix.phar }} \
+            bin/${{ matrix.phar }}-${{ matrix.platform }}
+        
+        docker rm -f extract-${{ matrix.phar }}-${{ matrix.platform }}
+
+    - name: "Push extracted bin as artifact"
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ matrix.phar }}-${{ matrix.platform }}
+        path: bin/${{ matrix.phar }}-${{ matrix.platform }}

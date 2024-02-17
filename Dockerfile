@@ -1,4 +1,4 @@
-FROM ubuntu:latest AS builder
+FROM ubuntu:latest
 ARG PHP_EXTENSIONS=filter,tokenizer,dom,mbstring,phar
 WORKDIR /build
 RUN apt-get update && apt-get install -y \
@@ -25,16 +25,14 @@ RUN spc doctor --auto-fix && \
         --for-extensions=apcu,bcmath,bz2,calendar,ctype,curl,dba,dom,event,exif,fileinfo,filter,ftp,gd,gmp,iconv,imagick,imap,intl,mbregex,mbstring,mysqli,mysqlnd,opcache,openssl,pcntl,pdo,pdo_mysql,pdo_pgsql,pdo_sqlite,pgsql,phar,posix,protobuf,readline,redis,session,shmop,simplexml,soap,sockets,sodium,sqlite3,swoole,sysvmsg,sysvsem,sysvshm,tokenizer,xml,xmlreader,xmlwriter,xsl,zip,zlib \
         --with-php=8.2
 RUN spc build \
-        $PHP_EXTENSIONS \
+        phar,$PHP_EXTENSIONS \
         --build-micro \
         --enable-zts
 
-
-FROM builder as builder-php-cs-fixer
 ARG PHAR_DOWNLOAD_URL
 ARG OUTPUT_BIN_NAME
 
-RUN wget -q $PHAR_DOWNLOAD_URL -O $PHAR_NAME.phar && \
+RUN wget -q $PHAR_DOWNLOAD_URL -O $OUTPUT_BIN_NAME.phar && \
     chmod +x $OUTPUT_BIN_NAME.phar
 RUN mkdir -p /build/bin && \
     spc \
@@ -44,4 +42,5 @@ RUN mkdir -p /build/bin && \
       --output /build/bin/$OUTPUT_BIN_NAME \
     && \
     chmod +x /build/bin/$OUTPUT_BIN_NAME
+
 
