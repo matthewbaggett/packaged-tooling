@@ -42,7 +42,7 @@ ARG OUTPUT_BIN_NAME
 WORKDIR /build
 
 RUN wget -q $PHAR_DOWNLOAD_URL -O $OUTPUT_BIN_NAME.phar && \
-    chmod +x $OUTPUT_BIN_NAME.phar \
+    chmod +x $OUTPUT_BIN_NAME.phar
 RUN mkdir -p /build/bin && \
     spc \
       micro:combine \
