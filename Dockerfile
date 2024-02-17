@@ -50,6 +50,10 @@ RUN mkdir -p /build/bin && \
 #      -I "memory_limit=512M" \
       --output /build/bin/$OUTPUT_BIN_NAME \
     && \
-    chmod +x /build/bin/$OUTPUT_BIN_NAME
+    chmod +x /build/bin/$OUTPUT_BIN_NAME && \
+    echo "Input:" && \
+    ls -lh $OUTPUT_BIN_NAME.phar && \
+    echo "Output:" && \
+    ls -lh /build/bin/$OUTPUT_BIN_NAME
 
 
