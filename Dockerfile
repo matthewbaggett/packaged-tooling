@@ -1,4 +1,5 @@
 FROM ubuntu:latest AS builder
+ARG PHP_EXTENSIONS=filter,tokenizer,dom,mbstring,phar
 WORKDIR /build
 RUN apt-get update && apt-get install -y \
       curl \
@@ -24,17 +25,23 @@ RUN spc doctor --auto-fix && \
         --for-extensions=apcu,bcmath,bz2,calendar,ctype,curl,dba,dom,event,exif,fileinfo,filter,ftp,gd,gmp,iconv,imagick,imap,intl,mbregex,mbstring,mysqli,mysqlnd,opcache,openssl,pcntl,pdo,pdo_mysql,pdo_pgsql,pdo_sqlite,pgsql,phar,posix,protobuf,readline,redis,session,shmop,simplexml,soap,sockets,sodium,sqlite3,swoole,sysvmsg,sysvsem,sysvshm,tokenizer,xml,xmlreader,xmlwriter,xsl,zip,zlib \
         --with-php=8.2
 RUN spc build \
-        apcu,bcmath,bz2,calendar,ctype,curl,dba,dom,event,exif,fileinfo,filter,ftp,gd,gmp,iconv,imagick,imap,intl,mbregex,mbstring,mysqli,mysqlnd,opcache,openssl,pcntl,pdo,pdo_mysql,pdo_pgsql,pdo_sqlite,pgsql,phar,posix,protobuf,readline,redis,session,shmop,simplexml,soap,sockets,sodium,sqlite3,swoole,sysvmsg,sysvsem,sysvshm,tokenizer,xml,xmlreader,xmlwriter,xsl,zip,zlib \
+        $PHP_EXTENSIONS \
         --build-micro \
         --enable-zts
 
 
 FROM builder as builder-php-cs-fixer
-RUN wget -qN https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/download/v3.49.0/php-cs-fixer.phar && \
-    chmod +x php-cs-fixer.phar && \
-    mkdir -p /build/bin && \
-   spc micro:combine php-cs-fixer.phar -I "memory_limit=512M" --output /build/bin/php-cs-fixer && \
-    chmod +x /build/bin/php-cs-fixer && \
-    ls -lah /build/bin && \
-    /build/bin/php-cs-fixer --version
+ARG PHAR_DOWNLOAD_URL
+ARG OUTPUT_BIN_NAME
+
+RUN wget -q $PHAR_DOWNLOAD_URL -O $PHAR_NAME.phar && \
+    chmod +x $OUTPUT_BIN_NAME.phar
+RUN mkdir -p /build/bin && \
+    spc \
+      micro:combine \
+      $OUTPUT_BIN_NAME.phar \
+#      -I "memory_limit=512M" \
+      --output /build/bin/$OUTPUT_BIN_NAME \
+    && \
+    chmod +x /build/bin/$OUTPUT_BIN_NAME
 
