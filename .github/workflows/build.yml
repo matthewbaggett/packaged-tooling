@@ -35,6 +35,7 @@ jobs:
           --progress plain \
           --tag matthewbaggett/packaged-tooling:${{ matrix.phar }} \
           --file ./Dockerfile \
+          --load \
           --build-arg PHAR_DOWNLOAD_URL=${{ matrix.source }} \
           --build-arg PHAR_EXTENSIONS=${{ matrix.extensions }} \
           --build-arg OUTPUT_BIN_NAME=${{ matrix.phar }} \
