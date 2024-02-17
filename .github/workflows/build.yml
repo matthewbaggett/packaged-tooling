@@ -39,6 +39,8 @@ jobs:
 
       - name: "Build: ${{ matrix.phar }}"
         run: |
+          instance_id=$(echo "extract-${{ matrix.phar }}-${{ matrix.platform }}" |  sed 's/[^a-zA-Z0-9]/-/g')
+          
           docker buildx build \
             --progress plain \
             --tag matthewbaggett/packaged-tooling:${{ matrix.phar }} \
@@ -51,15 +53,19 @@ jobs:
             --build-arg OUTPUT_BIN_NAME=${{ matrix.phar }} \
             .
 
+          docker rm -f $instance_id | true
+          
           docker create \
-            --name extract-${{ matrix.phar }}-${{ matrix.platform }} \
+            --name $instance_id \
             matthewbaggett/packaged-tooling:${{ matrix.phar }}
 
+          mkdir -p bin/
+          
           docker cp \
-              extract-${{ matrix.phar }}-${{ matrix.platform }}:/build/bin/${{ matrix.phar }} \
+              $instance_id:/build/bin/${{ matrix.phar }} \
               bin/${{ matrix.phar }}-${{ matrix.platform }}
 
-          docker rm -f extract-${{ matrix.phar }}-${{ matrix.platform }}
+          docker rm -f $instance_id
 
       - name: "Cleanup: Push extracted bin as artifact"
         uses: actions/upload-artifact@v2

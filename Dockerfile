@@ -18,18 +18,20 @@ RUN apt-get -qq update && \
 ENV PATH="/build/bin:/build/static-php-cli/bin:${PATH}"
 
 RUN git clone https://github.com/crazywhalecc/static-php-cli.git
-WORKDIR /build/static-php-cli
-RUN chmod +x bin/setup-runtime && \
+WORKDIR /build
+RUN cd static-php-cli && \
+    chmod +x bin/setup-runtime && \
     bin/setup-runtime && \
     ls -lh bin
-RUN echo $PATH && \
+RUN echo $PATH
+RUN cd static-php-cli && \
     bin/composer install && \
     chmod +x bin/spc && \
     spc --version
-
 RUN spc doctor --auto-fix && \
     spc download \
-        --for-extensions=apcu,bcmath,bz2,calendar,ctype,curl,dba,dom,event,exif,fileinfo,filter,ftp,gd,gmp,iconv,imagick,imap,intl,mbregex,mbstring,mysqli,mysqlnd,opcache,openssl,pcntl,pdo,pdo_mysql,pdo_pgsql,pdo_sqlite,pgsql,phar,posix,protobuf,readline,redis,session,shmop,simplexml,soap,sockets,sodium,sqlite3,swoole,sysvmsg,sysvsem,sysvshm,tokenizer,xml,xmlreader,xmlwriter,xsl,zip,zlib \
+        # Options: apcu,bcmath,bz2,calendar,ctype,curl,dba,dom,event,exif,fileinfo,filter,ftp,gd,gmp,iconv,imagick,imap,intl,mbregex,mbstring,mysqli,mysqlnd,opcache,openssl,pcntl,pdo,pdo_mysql,pdo_pgsql,pdo_sqlite,pgsql,phar,posix,protobuf,readline,redis,session,shmop,simplexml,soap,sockets,sodium,sqlite3,swoole,sysvmsg,sysvsem,sysvshm,tokenizer,xml,xmlreader,xmlwriter,xsl,zip,zlib
+        --for-extensions=phar,$PHP_EXTENSIONS \
         --with-php=8.2
 RUN spc build \
         phar,$PHP_EXTENSIONS \
@@ -39,8 +41,6 @@ RUN spc build \
 FROM builder-precursor AS builder-phar
 ARG PHAR_DOWNLOAD_URL
 ARG OUTPUT_BIN_NAME
-WORKDIR /build
-
 RUN wget -q $PHAR_DOWNLOAD_URL -O $OUTPUT_BIN_NAME.phar && \
     chmod +x $OUTPUT_BIN_NAME.phar
 RUN mkdir -p /build/bin && \
