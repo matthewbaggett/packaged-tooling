@@ -1,21 +1,27 @@
-FROM ubuntu:latest
+# checkov:skip=CKV_DOCKER_2 Healthcheck makes no sense here.
+# checkov:skip=CKV_DOCKER_3 user cannot be determined at this stage.
+FROM ubuntu:focal
 ARG PHP_EXTENSIONS=filter,tokenizer,dom,mbstring,phar
 WORKDIR /build
-RUN apt-get update && apt-get install -y \
+# hadolint ignore=DL3008
+RUN apt-get -qq update && \
+    apt-get -yqq install --no-install-recommends \
       curl \
       wget \
       build-essential \
-      git
+      git \
+    && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ENV PATH="/build/bin:/build/static-php-cli/bin:${PATH}"
 
+WORKDIR /build/static-php-cli
 RUN git clone https://github.com/crazywhalecc/static-php-cli.git && \
-    cd static-php-cli && \
     chmod +x bin/setup-runtime && \
     bin/setup-runtime && \
     ls -lh bin
-RUN cd static-php-cli && \
-    echo $PATH && \
+RUN echo $PATH && \
     bin/composer install && \
     chmod +x bin/spc && \
     spc --version
@@ -31,9 +37,10 @@ RUN spc build \
 
 ARG PHAR_DOWNLOAD_URL
 ARG OUTPUT_BIN_NAME
+WORKDIR /build
 
 RUN wget -q $PHAR_DOWNLOAD_URL -O $OUTPUT_BIN_NAME.phar && \
-    chmod +x $OUTPUT_BIN_NAME.phar
+    chmod +x $OUTPUT_BIN_NAME.phar \
 RUN mkdir -p /build/bin && \
     spc \
       micro:combine \

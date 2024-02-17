@@ -33,6 +33,8 @@ actions:
     - trunk-fmt-pre-commit
     - trunk-upgrade-available
 tools:
+  disabled:
+    - terrascan
   enabled:
     - act@0.2.59
     - action-validator@0.5.4
