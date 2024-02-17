@@ -43,6 +43,7 @@ jobs:
             --progress plain \
             --tag matthewbaggett/packaged-tooling:${{ matrix.phar }} \
             --target builder-phar \
+            --platform ${{ matrix.platform }} \
             --file ./Dockerfile \
             --load \
             --build-arg PHAR_DOWNLOAD_URL=${{ matrix.source }} \
