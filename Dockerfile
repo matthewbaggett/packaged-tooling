@@ -10,16 +10,13 @@ RUN apt-get -qq update && \
       curl \
       wget \
       build-essential \
-      git \
-    && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+      git
 
 ENV PATH="/build/bin:/build/static-php-cli/bin:${PATH}"
 
+RUN git clone https://github.com/crazywhalecc/static-php-cli.git
 WORKDIR /build/static-php-cli
-RUN git clone https://github.com/crazywhalecc/static-php-cli.git && \
-    chmod +x bin/setup-runtime && \
+RUN chmod +x bin/setup-runtime && \
     bin/setup-runtime && \
     ls -lh bin
 RUN echo $PATH && \
