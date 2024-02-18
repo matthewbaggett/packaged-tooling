@@ -28,9 +28,13 @@ jobs:
     steps:
       - name: Download ${{ matrix.phar }} on ${{ matrix.platform }}
         id: download
-        uses: actions/download-artifact@v4
+        uses: dawidd6/action-download-artifact@v3
         with:
           name: ${{ matrix.phar }}-${{ matrix.php }}-${{ matrix.platform }}
+
+      - run: |
+          pwd
+          ls -lh .
 
       - name: Upload release asset
         uses: actions/upload-release-asset@v1
