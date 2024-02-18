@@ -1,0 +1,31 @@
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - macos-x86_64
+          - macos-arm64
+          - linux-x86_64
+        phar:
+          - php-cs-fixer
+    steps:
+      - name: Download ${{ matrix.phar }} on ${{ matrix.platform }}
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.phar }}-${{ matrix.platform }}
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ steps.download.outputs.download_path }}
+          asset_name: ${{ steps.download.outputs.download_path }}
