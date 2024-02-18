@@ -43,7 +43,8 @@ jobs:
 
       - name: Upload release asset
         uses: actions/upload-release-asset@v1
+        if: ${{ github.event_name == 'release' }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ steps.download.outputs.download_path }}
-          asset_name: ${{ steps.download.outputs.download_path }}
+          asset_path: ${{ matrix.phar }}-${{ matrix.php }}-${{ matrix.platform }}
+          asset_name: ${{ matrix.phar }}-${{ matrix.php }}-${{ matrix.platform }}
