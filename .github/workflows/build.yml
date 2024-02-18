@@ -117,11 +117,14 @@ jobs:
             --build-micro \
             --enable-zts
 
-      - name: Download PHAR (${{ matrix.phar_download }})
+      - name: Download PHAR (${{ matrix.source }})
         shell: bash
         run: |
           mkdir -p ${{ github.workspace }}/phars;
-          curl -L -o ${{ github.workspace }}/phars/${{ matrix.phar }}.phar ${{ matrix.source }}
+          echo "Downloading ${{ matrix.phar }}.phar from ${{ matrix.source }}";
+          curl -L \
+            -o ${{ github.workspace }}/phars/${{ matrix.phar }}.phar \
+            ${{ matrix.source }}
 
       - name: Build ${{ matrix.phar }}.phar
         shell: bash
