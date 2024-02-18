@@ -42,11 +42,13 @@ jobs:
         run: |
           ARCH=$(uname -m)
           echo "Arch: $ARCH"
+          SPC_BIN=$(echo "spc-${{ matrix.php }}-${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
           OUTPUT_BIN=$(echo "${{ matrix.phar }}-${{ matrix.php }}-${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
           echo "Output binary: $OUTPUT_BIN"
           CACHE_KEY=$(echo "${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
           {
             echo "arch=$ARCH"
+            echo "spc_bin=$SPC_BIN"
             echo "output_bin=$OUTPUT_BIN"
             echo "cache_key=$CACHE_KEY"
           } >> $GITHUB_OUTPUT
@@ -88,7 +90,7 @@ jobs:
       - name: Push spc as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: spc-${{ runner.os }}-$(uname -m)
+          name: ${{ steps.env.outputs.spc_bin }}
           path: ${{ github.workspace }}/static-php-cli/bin/spc
 
       - name: SPC Doctor
