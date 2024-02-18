@@ -21,8 +21,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-latest
-          - macos-latest
+          - ubuntu-22.04
+          - macos-13
           - macos-14
         php:
           - 8.1
@@ -50,12 +50,6 @@ jobs:
             echo "output_bin=$OUTPUT_BIN"
             echo "cache_key=$CACHE_KEY"
           } >> $GITHUB_OUTPUT
-
-      #      - name: Install dependencies
-      #        shell: bash
-      #        run: |
-      #          sudo apt-get -qq update
-      #          sudo apt-get -yqq install git ca-certificates curl wget build-essential
 
       - name: Clone crazywhalecc/static-php-cli
         uses: actions/checkout@v4
