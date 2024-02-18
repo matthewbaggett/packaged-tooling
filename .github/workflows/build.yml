@@ -43,11 +43,11 @@ jobs:
             echo "output_bin=$OUTPUT_BIN"
           } >> $GITHUB_OUTPUT
 
-      - name: Install dependencies
-        shell: bash
-        run: |
-          apt-get -qq update 
-          apt-get -yqq install git ca-certificates curl wget build-essential
+#      - name: Install dependencies
+#        shell: bash
+#        run: |
+#          sudo apt-get -qq update
+#          sudo apt-get -yqq install git ca-certificates curl wget build-essential
 
       - name: Clone crazywhalecc/static-php-cli
         uses: actions/checkout@v4
@@ -93,6 +93,11 @@ jobs:
         shell: bash
         working-directory: static-php-cli
         run: |
+          #if runner.os is 'Linux', run apt update
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            sudo apt-get -qq update
+          fi
+          
           bin/spc doctor --auto-fix
 
       - name: SPC Download
