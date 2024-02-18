@@ -32,12 +32,10 @@ jobs:
           - php-cs-fixer
           - composer
         failure_is_acceptable: [false]
-        push_spc: [false]
         include:
           - phar: php-cs-fixer
             source: https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/download/v3.49.0/php-cs-fixer.phar
             extensions: filter,tokenizer,dom,mbstring
-            push_spc: true
           - phar: composer
             source: https://getcomposer.org/download/2.7.1/composer.phar
             extensions: zlib,zip,openssl
@@ -93,12 +91,12 @@ jobs:
           echo "${{ github.workspace }}/static-php-cli/bin"
           ls -lh ${{ github.workspace }}/static-php-cli/bin
 
-      - name: Push spc as artifact
-        if: ${{ matrix.push_spc }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.env.outputs.spc_bin }}
-          path: ${{ github.workspace }}/static-php-cli/bin/spc
+      #- name: Push spc as artifact
+      #  if: ${{ matrix.push_spc }}
+      #  uses: actions/upload-artifact@v4
+      #  with:
+      #    name: ${{ steps.env.outputs.spc_bin }}
+      #    path: ${{ github.workspace }}/static-php-cli/bin/spc
 
       - name: SPC Doctor
         shell: bash
