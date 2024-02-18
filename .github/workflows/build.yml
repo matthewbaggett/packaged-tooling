@@ -30,11 +30,15 @@ jobs:
           - 8.3
         phar:
           - php-cs-fixer
+          - composer
         failure_is_acceptable: [false]
         include:
           - phar: php-cs-fixer
             source: https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/download/v3.49.0/php-cs-fixer.phar
             extensions: filter,tokenizer,dom,mbstring
+          - phar: composer
+            source: https://getcomposer.org/download/2.7.1/composer.phar
+            extensions: zlib,zip,openssl
     steps:
       - name: Get Envs
         id: env
