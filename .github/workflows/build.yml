@@ -44,16 +44,18 @@ jobs:
           echo "Arch: $ARCH"
           OUTPUT_BIN=$(echo "${{ matrix.phar }}-${{ matrix.php }}-${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
           echo "Output binary: $OUTPUT_BIN"
+          CACHE_KEY=$(echo "${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
           {
             echo "arch=$ARCH"
             echo "output_bin=$OUTPUT_BIN"
+            echo "cache_key=$CACHE_KEY"
           } >> $GITHUB_OUTPUT
 
-#      - name: Install dependencies
-#        shell: bash
-#        run: |
-#          sudo apt-get -qq update
-#          sudo apt-get -yqq install git ca-certificates curl wget build-essential
+      #      - name: Install dependencies
+      #        shell: bash
+      #        run: |
+      #          sudo apt-get -qq update
+      #          sudo apt-get -yqq install git ca-certificates curl wget build-essential
 
       - name: Clone crazywhalecc/static-php-cli
         uses: actions/checkout@v4
@@ -64,7 +66,7 @@ jobs:
       - id: cache
         uses: actions/cache@v4
         with:
-          key: ${{ steps.env.outputs.output_bin }}
+          key: ${{ steps.env.outputs.cache_key }}
           path: |
             static-php-cli/vendor
             static-php-cli/downloads
@@ -103,7 +105,7 @@ jobs:
           if [[ "${{ runner.os }}" == "Linux" ]]; then
             sudo apt-get -qq update
           fi
-          
+
           bin/spc doctor --auto-fix
 
       - name: SPC Download
