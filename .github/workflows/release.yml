@@ -51,3 +51,4 @@ jobs:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ${{ matrix.phar }}-${{ matrix.php }}-${{ matrix.platform }}
           asset_name: ${{ matrix.phar }}-${{ matrix.php }}-${{ matrix.platform }}
+          asset_content_type: application/octet-stream
