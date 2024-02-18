@@ -30,7 +30,21 @@ jobs:
             source: https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/download/v3.49.0/php-cs-fixer.phar
             extensions: filter,tokenizer,dom,mbstring
     steps:
+      - name: Get Envs
+        id: env
+        shell: bash
+        run: |
+          ARCH=$(uname -m)
+          echo "Arch: $ARCH"
+          OUTPUT_BIN=$(echo "${{ matrix.phar }}-${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          echo "Output binary: $OUTPUT_BIN"
+          {
+            echo "arch=$ARCH"
+            echo "output_bin=$OUTPUT_BIN"
+          } >> $GITHUB_OUTPUT
+
       - name: Install dependencies
+        shell: bash
         run: |
           apt-get -qq update 
           apt-get -yqq install git ca-certificates curl wget build-essential
@@ -41,7 +55,16 @@ jobs:
           repository: crazywhalecc/static-php-cli
           path: static-php-cli
 
+      - id: cache
+        uses: actions/cache@v4
+        with:
+          key: ${{ steps.env.outputs.output_bin }}
+          path: |
+            static-php-cli/vendor
+            static-php-cli/downloads
+
       - name: Setup Runtime
+        shell: bash
         working-directory: static-php-cli
         run: |
           chmod +x bin/setup-runtime
@@ -49,6 +72,7 @@ jobs:
           echo "${{ github.workspace }}/static-php-cli/bin" >> $GITHUB_PATH
 
       - name: Composer install
+        shell: bash
         working-directory: static-php-cli
         run: |
           bin/composer install
@@ -66,11 +90,13 @@ jobs:
           path: ${{ github.workspace }}/static-php-cli/bin/spc
 
       - name: SPC Doctor
+        shell: bash
         working-directory: static-php-cli
         run: |
           bin/spc doctor --auto-fix
 
       - name: SPC Download
+        shell: bash
         working-directory: static-php-cli
         run: |
           bin/spc download \
@@ -78,6 +104,7 @@ jobs:
             --with-php=${{ matrix.php }}
 
       - name: SPC Build
+        shell: bash
         working-directory: static-php-cli
         run: |
           bin/spc build \
@@ -86,22 +113,24 @@ jobs:
             --enable-zts
 
       - name: Download PHAR (${{ matrix.phar_download }})
+        shell: bash
         run: |
           mkdir -p ${{ github.workspace }}/phars;
           curl -L -o ${{ github.workspace }}/phars/${{ matrix.phar }}.phar ${{ matrix.source }}
 
-      - name: Build ${{ matrix.phar }}
+      - name: Build ${{ matrix.phar }}.phar
+        shell: bash
         working-directory: static-php-cli
         run: |
-          mkdir -p ${{ github.workspace }}/out;
+          mkdir -p ${{ github.workspace }}/out || true;
           bin/spc \
             micro:combine \
             ${{ github.workspace }}/phars/${{ matrix.phar }}.phar \
-            --output ${{ github.workspace }}/out/${{ matrix.phar }}-${{ runner.os }}-$(uname -m)
+            --output ${{ github.workspace }}/out/${{ steps.env.outputs.output_bin }}
 
-      - name: Push ${{ matrix.phar }}-${{ runner.os }}-$(uname -m) as artifact
+      - name: Push ${{ steps.env.outputs.output_bin }} as artifact
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.phar }}-${{ runner.os }}-$(uname -m)
+          name: ${{ steps.env.outputs.output_bin }}
           path: |
-            ${{ github.workspace }}/out/*
+            ${{ github.workspace }}/out/${{ steps.env.outputs.output_bin }}
