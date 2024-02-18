@@ -11,64 +11,97 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.failure_is_acceptable }}
     strategy:
       fail-fast: false
       matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - macos-14
+        php:
+          - 8.2
         phar:
           - php-cs-fixer
-        platform:
-          - linux/amd64
-          - linux/arm64
+        failure_is_acceptable: [false]
         include:
           - phar: php-cs-fixer
             source: https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/download/v3.49.0/php-cs-fixer.phar
             extensions: filter,tokenizer,dom,mbstring
     steps:
-      - name: "Git: Checkout"
-        uses: actions/checkout@v4
-
-      - name: "Setup: QEMU"
-        uses: docker/setup-qemu-action@v3
-
-      - name: "Setup: Buildx"
-        uses: docker/setup-buildx-action@v3
-        with:
-          install: true
-          platforms: ${{ matrix.platform }}
-
-      - name: "Build: ${{ matrix.phar }}"
+      - name: Install dependencies
         run: |
-          instance_id=$(echo "extract-${{ matrix.phar }}-${{ matrix.platform }}" |  sed 's/[^a-zA-Z0-9]/-/g')
-          
-          docker buildx build \
-            --progress plain \
-            --tag matthewbaggett/packaged-tooling:${{ matrix.phar }} \
-            --target builder-phar \
-            --platform ${{ matrix.platform }} \
-            --file ./Dockerfile \
-            --load \
-            --build-arg PHAR_DOWNLOAD_URL=${{ matrix.source }} \
-            --build-arg PHAR_EXTENSIONS=${{ matrix.extensions }} \
-            --build-arg OUTPUT_BIN_NAME=${{ matrix.phar }} \
-            .
+          apt-get -qq update 
+          apt-get -yqq install git ca-certificates curl wget build-essential
 
-          docker rm -f $instance_id | true
-          
-          docker create \
-            --name $instance_id \
-            matthewbaggett/packaged-tooling:${{ matrix.phar }}
+      - name: Clone crazywhalecc/static-php-cli
+        uses: actions/checkout@v4
+        with:
+          repository: crazywhalecc/static-php-cli
+          path: static-php-cli
 
-          mkdir -p bin/
-          
-          docker cp \
-              $instance_id:/build/bin/${{ matrix.phar }} \
-              bin/${{ matrix.phar }}-${{ matrix.platform }}
+      - name: Setup Runtime
+        working-directory: static-php-cli
+        run: |
+          chmod +x bin/setup-runtime
+          bin/setup-runtime
+          echo "${{ github.workspace }}/static-php-cli/bin" >> $GITHUB_PATH
 
-          docker rm -f $instance_id
+      - name: Composer install
+        working-directory: static-php-cli
+        run: |
+          bin/composer install
+          chmod +x bin/spc
+          bin/spc --version
+          echo "${{ github.workspace }}/static-php-cli"
+          ls -lh ${{ github.workspace }}/static-php-cli
+          echo "${{ github.workspace }}/static-php-cli/bin"
+          ls -lh ${{ github.workspace }}/static-php-cli/bin
 
-      - name: "Cleanup: Push extracted bin as artifact"
+      - name: Push spc as artifact
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.phar }}-${{ matrix.platform }}
-          path: bin/${{ matrix.phar }}-${{ matrix.platform }}
+          name: spc-${{ runner.os }}-$(uname -m)
+          path: ${{ github.workspace }}/static-php-cli/bin/spc
+
+      - name: SPC Doctor
+        working-directory: static-php-cli
+        run: |
+          bin/spc doctor --auto-fix
+
+      - name: SPC Download
+        working-directory: static-php-cli
+        run: |
+          bin/spc download \
+            --for-extensions=phar,${{ matrix.extensions }} \
+            --with-php=${{ matrix.php }}
+
+      - name: SPC Build
+        working-directory: static-php-cli
+        run: |
+          bin/spc build \
+            phar,${{ matrix.extensions }} \
+            --build-micro \
+            --enable-zts
+
+      - name: Download PHAR (${{ matrix.phar_download }})
+        run: |
+          mkdir -p ${{ github.workspace }}/phars;
+          curl -L -o ${{ github.workspace }}/phars/${{ matrix.phar }}.phar ${{ matrix.source }}
+
+      - name: Build ${{ matrix.phar }}
+        working-directory: static-php-cli
+        run: |
+          mkdir -p ${{ github.workspace }}/out;
+          bin/spc \
+            micro:combine \
+            ${{ github.workspace }}/phars/${{ matrix.phar }}.phar \
+            --output ${{ github.workspace }}/out/${{ matrix.phar }}-${{ runner.os }}-$(uname -m)
+
+      - name: Push ${{ matrix.phar }}-${{ runner.os }}-$(uname -m) as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.phar }}-${{ runner.os }}-$(uname -m)
+          path: |
+            ${{ github.workspace }}/out/*

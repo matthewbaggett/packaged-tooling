@@ -1,4 +1,6 @@
-.github/cache
-.idea
-bin
-.secrets
+/.github/cache
+/.idea
+/out
+/phars
+/.secrets
+/static-php-cli
