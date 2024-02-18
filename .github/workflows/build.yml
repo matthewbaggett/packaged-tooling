@@ -86,7 +86,7 @@ jobs:
           ls -lh ${{ github.workspace }}/static-php-cli/bin
 
       - name: Push spc as artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: spc-${{ runner.os }}-$(uname -m)
           path: ${{ github.workspace }}/static-php-cli/bin/spc
@@ -139,7 +139,7 @@ jobs:
             --output ${{ github.workspace }}/out/${{ steps.env.outputs.output_bin }}
 
       - name: Push ${{ steps.env.outputs.output_bin }} as artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.env.outputs.output_bin }}
           path: |
