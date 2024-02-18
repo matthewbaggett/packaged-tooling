@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/release.yml
   release:
+    types: [published]
 
 permissions: read-all
 
@@ -36,6 +37,8 @@ jobs:
         uses: dawidd6/action-download-artifact@v3
         with:
           name: ${{ matrix.phar }}-${{ matrix.php }}-${{ matrix.platform }}
+          #commit: ${{ github.event.pull_request.head.sha }}
+          search_artifacts: true
 
       - run: |
           pwd
