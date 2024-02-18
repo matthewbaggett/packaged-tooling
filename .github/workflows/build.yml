@@ -1,3 +1,5 @@
+name: "Build"
+
 on:
   push:
     branches:
@@ -23,7 +25,9 @@ jobs:
           - macos-latest
           - macos-14
         php:
+          - 8.1
           - 8.2
+          - 8.3
         phar:
           - php-cs-fixer
         failure_is_acceptable: [false]
@@ -38,7 +42,7 @@ jobs:
         run: |
           ARCH=$(uname -m)
           echo "Arch: $ARCH"
-          OUTPUT_BIN=$(echo "${{ matrix.phar }}-${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          OUTPUT_BIN=$(echo "${{ matrix.phar }}-${{ matrix.php }}-${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
           echo "Output binary: $OUTPUT_BIN"
           {
             echo "arch=$ARCH"
