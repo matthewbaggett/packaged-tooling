@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - .github/workflows/build.yml
-
+      - .github/composite-actions/setup-spc/**
+      - .github/workflows/composer.yml
 permissions: read-all
 
 concurrency:
