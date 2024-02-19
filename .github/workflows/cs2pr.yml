@@ -55,8 +55,8 @@ jobs:
           php_version: ${{ matrix.php }}
           php_extensions: ${{ env.extensions }}
 
-      - name: "Install ca-certificates"
-        run: sudo apt-get install -y ca-certificates
+      #- name: "Install ca-certificates"
+      #  run: sudo apt-get install -y ca-certificates
 
       - name: Clone staabm/annotate-pull-request-from-checkstyle
         uses: actions/checkout@v4
