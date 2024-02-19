@@ -28,6 +28,7 @@ jobs:
           - linux-x86_64
         php: [8.1, 8.2, 8.3]
         phar:
+          - php
           - php-cs-fixer
           - composer
           - cs2pr
