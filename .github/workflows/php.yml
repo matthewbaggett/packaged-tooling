@@ -1,0 +1,56 @@
+name: Composer
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/build.yml
+
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  extensions: apcu,bcmath,bz2,calendar,ctype,curl,dba,dom,event,exif,fileinfo,filter,ftp,gd,gmp,iconv,imagick,imap,intl,mbregex,mbstring,mysqli,mysqlnd,opcache,openssl,pcntl,pdo,pdo_mysql,pdo_pgsql,pdo_sqlite,pgsql,phar,posix,protobuf,readline,redis,session,shmop,simplexml,soap,sockets,sodium,sqlite3,swoole,sysvmsg,sysvsem,sysvshm,tokenizer,xml,xmlreader,xmlwriter,xsl,zip,zlib
+
+jobs:
+  php:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-13, macos-14]
+        php: [8.1, 8.2, 8.3]
+
+    steps:
+      - name: Get Envs
+        id: env
+        shell: bash
+        run: |
+          ARCH=$(uname -m)
+          echo "Arch: $ARCH"
+          SPC_BIN=$(echo "spc-${{ matrix.php }}-${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          OUTPUT_BIN=$(echo "php-${{ matrix.php }}-${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          echo "Output binary: $OUTPUT_BIN"
+          CACHE_KEY=$(echo "${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          {
+            echo "arch=$ARCH"
+            echo "spc_bin=$SPC_BIN"
+            echo "output_bin=$OUTPUT_BIN"
+            echo "cache_key=$CACHE_KEY"
+          } >> $GITHUB_OUTPUT
+
+      - uses: ./.github/composite-actions/setup-spc
+        with:
+          php_version: ${{ matrix.php }}
+          php_extensions: ${{ env.extensions }}
+
+      - name: Push ${{ steps.env.outputs.output_bin }} as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.env.outputs.output_bin }}
+          path: |
+            ${{ github.workspace }}/static-php-cli/bin/php

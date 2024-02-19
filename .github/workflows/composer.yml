@@ -1,0 +1,77 @@
+name: Composer
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/build.yml
+
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  phar: composer
+  source: https://getcomposer.org/download/2.7.1/composer.phar
+  extensions: zlib,zip,openssl
+
+jobs:
+  composer:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-13, macos-14]
+        php: [8.1, 8.2, 8.3]
+
+    steps:
+      - name: Get Envs
+        id: env
+        shell: bash
+        run: |
+          ARCH=$(uname -m)
+          echo "Arch: $ARCH"
+          SPC_BIN=$(echo "spc-${{ matrix.php }}-${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          OUTPUT_BIN=$(echo "${{ env.phar }}-${{ matrix.php }}-${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          echo "Output binary: $OUTPUT_BIN"
+          CACHE_KEY=$(echo "${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          {
+            echo "arch=$ARCH"
+            echo "spc_bin=$SPC_BIN"
+            echo "output_bin=$OUTPUT_BIN"
+            echo "cache_key=$CACHE_KEY"
+          } >> $GITHUB_OUTPUT
+
+      - uses: ./.github/composite-actions/setup-spc
+        with:
+          php_version: ${{ matrix.php }}
+          php_extensions: ${{ env.extensions }}
+
+      - name: Download PHAR (${{ env.source }})
+        shell: bash
+        run: |
+          mkdir -p ${{ github.workspace }}/phars;
+          echo "Downloading ${{ env.phar }}.phar from ${{ env.source }}";
+          curl -L \
+            -o ${{ github.workspace }}/phars/${{ env.phar }}.phar \
+            ${{ env.source }}
+
+      - name: Build ${{ env.phar }}.phar
+        shell: bash
+        working-directory: static-php-cli
+        run: |
+          mkdir -p ${{ github.workspace }}/out || true;
+          bin/spc \
+            micro:combine \
+            ${{ github.workspace }}/phars/${{ env.phar }}.phar \
+            --output ${{ github.workspace }}/out/${{ steps.env.outputs.output_bin }}
+
+      - name: Push ${{ steps.env.outputs.output_bin }} as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.env.outputs.output_bin }}
+          path: |
+            ${{ github.workspace }}/out/${{ steps.env.outputs.output_bin }}

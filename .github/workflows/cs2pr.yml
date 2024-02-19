@@ -1,0 +1,98 @@
+name: CS2PR
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/build.yml
+
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  phar: cs2pr
+  source: https://github.com/staabm/annotate-pull-request-from-checkstyle.git
+  extensions: xml,simplexml,filter,tokenizer,dom,mbstring,openssl
+  cs2pr_version: 1.8.5
+
+jobs:
+  cs2pr:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-13, macos-14]
+        php: [8.1, 8.2, 8.3]
+
+    steps:
+      - name: Get Envs
+        id: env
+        shell: bash
+        run: |
+          ARCH=$(uname -m)
+          echo "Arch: $ARCH"
+          SPC_BIN=$(echo "spc-${{ matrix.php }}-${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          OUTPUT_BIN=$(echo "${{ env.phar }}-${{ matrix.php }}-${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          echo "Output binary: $OUTPUT_BIN"
+          CACHE_KEY=$(echo "${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          {
+            echo "arch=$ARCH"
+            echo "spc_bin=$SPC_BIN"
+            echo "output_bin=$OUTPUT_BIN"
+            echo "cache_key=$CACHE_KEY"
+          } >> $GITHUB_OUTPUT
+
+      - uses: ./.github/composite-actions/setup-spc
+        with:
+          php_version: ${{ matrix.php }}
+          php_extensions: ${{ env.extensions }}
+
+      - name: "Install ca-certificates"
+        run: sudo apt-get install -y ca-certificates
+
+      - name: Clone staabm/annotate-pull-request-from-checkstyle
+        uses: actions/checkout@v4
+        with:
+          repository: staabm/annotate-pull-request-from-checkstyle
+          path: cs2pr
+          tag: ${{ env.cs2pr_version }}
+
+      - name: Install box (phar builder)
+        shell: bash
+        run: |
+          # Download https://github.com/box-project/box/releases/download/4.6.1/box.phar
+          curl -L \
+            -o ${{ github.workspace }}/phars/box.phar \
+            https://github.com/box-project/box/releases/download/4.6.1/box.phar
+          chmod +x ${{ github.workspace }}/phars/box.phar
+
+      - name: Build cs2pr.phar
+        shell: bash
+        working-directory: cs2pr
+        run: |
+          composer install
+          ${{ github.workspace }}/phars/box.phar --version
+          ${{ github.workspace }}/phars/box.phar -h
+          ${{ github.workspace }}/phars/box.phar compile
+          mv ${{ env.phar }}.phar ${{ github.workspace }}/phars/${{ env.phar }}.phar
+
+      - name: Build ${{ env.phar }} binary
+        shell: bash
+        working-directory: static-php-cli
+        run: |
+          mkdir -p ${{ github.workspace }}/out || true;
+          bin/spc \
+            micro:combine \
+            ${{ github.workspace }}/phars/${{ env.phar }}.phar \
+            --output ${{ github.workspace }}/out/${{ steps.env.outputs.output_bin }}
+
+      - name: Push ${{ steps.env.outputs.output_bin }} as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.env.outputs.output_bin }}
+          path: |
+            ${{ github.workspace }}/out/${{ steps.env.outputs.output_bin }}

@@ -1,0 +1,99 @@
+name: "Setup SPC"
+description: "Setup SPC"
+inputs:
+  spc_version:
+    description: "Version of SPC"
+    required: true
+    default: "2.0.1"
+  php_version:
+    description: "Version of PHP"
+    required: true
+  php_extensions:
+    required: true
+    description: "PHP extensions to build"
+
+
+runs:
+  using: "composite"
+  steps:
+    - name: Get Envs
+      id: cache-key
+      shell: bash
+      run: |
+        ARCH=$(uname -m)
+        CACHE_KEY=$(echo "${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+        {
+
+          echo "cache_key=$CACHE_KEY"
+        } >> $GITHUB_OUTPUT
+
+    - name: Clone crazywhalecc/static-php-cli
+      uses: actions/checkout@v4
+      with:
+        repository: crazywhalecc/static-php-cli
+        path: static-php-cli
+        tag: ${{ inputs.spc_version }}
+
+    - id: cache-pull
+      uses: actions/cache/restore@v4
+      with:
+        key: ${{ steps.cache-key.outputs.cache_key }}
+        path: |
+          static-php-cli/vendor
+          static-php-cli/downloads
+
+    - name: Setup Runtime
+      shell: bash
+      working-directory: static-php-cli
+      run: |
+        chmod +x bin/setup-runtime
+        bin/setup-runtime
+        echo "${{ github.workspace }}/static-php-cli/bin" >> $GITHUB_PATH
+
+    - name: Composer install
+      shell: bash
+      working-directory: static-php-cli
+      run: |
+        bin/composer install
+        chmod +x bin/spc
+        bin/spc --version
+        echo "${{ github.workspace }}/static-php-cli"
+        ls -lh ${{ github.workspace }}/static-php-cli
+        echo "${{ github.workspace }}/static-php-cli/bin"
+        ls -lh ${{ github.workspace }}/static-php-cli/bin
+
+    - name: SPC Doctor
+      shell: bash
+      working-directory: static-php-cli
+      run: |
+        #if runner.os is 'Linux', run apt update
+        if [[ "${{ runner.os }}" == "Linux" ]]; then
+          sudo apt-get -qq update
+        fi
+
+        bin/spc doctor --auto-fix
+
+    - name: SPC Download
+      shell: bash
+      working-directory: static-php-cli
+      run: |
+        bin/spc download \
+          --for-extensions=phar,${{ inputs.php_extensions }} \
+          --with-php=${{ inputs.php_version }}
+
+    - name: SPC Build
+      shell: bash
+      working-directory: static-php-cli
+      run: |
+        bin/spc build \
+          phar,${{ inputs.php_extensions }} \
+          --build-micro \
+          --enable-zts
+
+    - id: cache-push
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ steps.cache-key.outputs.cache_key }}
+        path: |
+          static-php-cli/vendor
+          static-php-cli/downloads
