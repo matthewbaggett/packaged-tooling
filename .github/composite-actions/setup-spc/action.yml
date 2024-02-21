@@ -11,7 +11,10 @@ inputs:
   php_extensions:
     required: true
     description: "PHP extensions to build"
-
+  spc_build_target:
+    required: true
+    description: "Build target for SPC"
+    default: "micro"
 
 runs:
   using: "composite"
@@ -77,6 +80,7 @@ runs:
       shell: bash
       working-directory: static-php-cli
       run: |
+        set -xe
         bin/spc download \
           --for-extensions=phar,${{ inputs.php_extensions }} \
           --with-php=${{ inputs.php_version }}
@@ -85,9 +89,10 @@ runs:
       shell: bash
       working-directory: static-php-cli
       run: |
+        set -xe
         bin/spc build \
           phar,${{ inputs.php_extensions }} \
-          --build-micro \
+          --build-${{ inputs.spc_build_target }} \
           --enable-zts
 
     - id: cache-push
