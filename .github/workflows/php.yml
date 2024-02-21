@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  extensions: apcu,bcmath,bz2,calendar,ctype,curl,dba,dom,event,exif,fileinfo,filter,ftp,gd,gmp,iconv,imagick,intl,mbregex,mbstring,mysqli,mysqlnd,opcache,openssl,pcntl,pdo,pdo_mysql,pdo_pgsql,pdo_sqlite,pgsql,phar,posix,protobuf,readline,redis,session,shmop,simplexml,soap,sockets,sodium,sqlite3,swoole,sysvmsg,sysvsem,sysvshm,tokenizer,xml,xmlreader,xmlwriter,xsl,zip,zlib
+  extensions: bcmath,bz2,curl,gd,imagick,intl,ldap,mbstring,memcache,mongodb,opcache,pgsql,redis,soap,xml,zip
 
 jobs:
   php:
@@ -51,6 +51,10 @@ jobs:
         with:
           php_version: ${{ matrix.php }}
           php_extensions: ${{ env.extensions }}
+          spc_build_target: all
+
+      - name: Show build artifacts
+        run: ls -lh static-php-cli/bin
 
       - name: Push ${{ steps.env.outputs.output_bin }} as artifact
         uses: actions/upload-artifact@v3
