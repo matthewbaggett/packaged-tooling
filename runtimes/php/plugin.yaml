@@ -1,0 +1,30 @@
+version: 0.1
+downloads:
+  - name: php-8.2
+    downloads:
+      - os:
+          linux: linux
+          macos: macos
+        cpu:
+          x86_64: x86_64
+          arm_64: arm64
+        url: https://github.com/matthewbaggett/packaged-tooling/releases/download/${version}/php-8.2-${os}-${cpu}
+runtimes:
+  definitions:
+    - type: python
+      download: php-8.2
+      known_good_version: 0.0.1
+      runtime_environment:
+        - name: HOME
+          value: ${env.HOME:-}
+        - name: PATH
+          list: ["${runtime}/bin"]
+        - name: http_proxy
+          value: ${env.http_proxy:-}
+        - name: https_proxy
+          value: ${env.https_proxy:-}
+      version_commands:
+        - run: php -r "echo explode(\"-\",phpversion())[0];"
+          parse_regex: ${semver}
+      shims:
+       - php
