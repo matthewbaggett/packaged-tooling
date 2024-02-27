@@ -1,0 +1,20 @@
+version: 0.1
+downloads:
+  - name: php-static-cli
+    downloads:
+      - os:
+          linux: linux
+          macos: macos
+        cpu:
+          x86_64: x86_64
+          arm_64: aarch64
+        url: https://github.com/crazywhalecc/static-php-cli/releases/download/${version}/spc-${os}-${cpu}.tar.gz
+tools:
+  definitions:
+    - name: php-static-cli
+      download: php-static-cli
+      known_good_version: 2.0.1
+      environment:
+        - name: PATH
+          list: ["${tool}/bin"]
+      shims: [spc]

@@ -1,0 +1,20 @@
+version: 0.1
+downloads:
+  - name: composer
+    downloads:
+      - os:
+          linux: linux
+          macos: macos
+        cpu:
+          x86_64: x86_64
+          arm_64: arm64
+        url: https://github.com/matthewbaggett/packaged-tooling/releases/download/${version}/composer-8.2-${os}-${cpu}
+tools:
+  definitions:
+    - name: composer
+      download: composer
+      known_good_version: 0.0.1
+      environment:
+        - name: PATH
+          list: ["${tool}/bin"]
+      shims: [composer]
