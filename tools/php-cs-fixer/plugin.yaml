@@ -18,3 +18,10 @@ tools:
         - name: PATH
           list: ["${tool}/bin"]
       shims: [php-cs-fixer]
+actions:
+  definitions:
+    - id: php-automatic-php-cs-fixer
+      display_name: "Automatically run PHP-CS-Fixer when files change"
+      triggers:
+        - files: ["**.php"]
+      run: php-cs-fixer fix ${target}
