@@ -17,4 +17,6 @@ tools:
       environment:
         - name: PATH
           list: ["${tool}/bin"]
-      shims: [composer]
+      shims:
+        - name: composer
+          target: composer

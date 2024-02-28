@@ -1,6 +1,6 @@
 version: 0.1
 downloads:
-  - name: php-cs-fixer
+  - name: php-cli
     downloads:
       - os:
           linux: linux
@@ -8,15 +8,15 @@ downloads:
         cpu:
           x86_64: x86_64
           arm_64: arm64
-        url: https://github.com/matthewbaggett/packaged-tooling/releases/download/${version}/php-cs-fixer-8.2-${os}-${cpu}
+        url: https://github.com/matthewbaggett/packaged-tooling/releases/download/${version}/php-8.2-${os}-${cpu}
 tools:
   definitions:
-    - name: php-cs-fixer
-      download: php-cs-fixer
+    - name: php
+      download: php-cli
       known_good_version: 0.0.1
       environment:
         - name: PATH
           list: ["${tool}/bin"]
       shims:
-       - name: php-cs-fixer
-         target: php-cs-fixer
+        - name: php
+          target: php-cli

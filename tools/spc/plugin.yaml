@@ -17,4 +17,6 @@ tools:
       environment:
         - name: PATH
           list: ["${tool}/bin"]
-      shims: [spc]
+      shims:
+        - name: spc
+          target: spc

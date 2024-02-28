@@ -17,4 +17,6 @@ tools:
       environment:
         - name: PATH
           list: ["${tool}/bin"]
-      shims: [cs2pr]
+      shims:
+        - name: cs2pr
+          target: cs2pr
