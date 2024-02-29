@@ -4,7 +4,7 @@ inputs:
   spc_version:
     description: "Version of SPC"
     required: true
-    default: "2.0.1"
+    default: "2.1.1"
   php_version:
     description: "Version of PHP"
     required: true
@@ -35,7 +35,7 @@ runs:
       with:
         repository: crazywhalecc/static-php-cli
         path: static-php-cli
-        tag: ${{ inputs.spc_version }}
+        ref: ${{ inputs.spc_version }}
 
     - id: cache-pull
       uses: actions/cache/restore@v4
