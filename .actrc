@@ -1,4 +1,4 @@
---bind
+#--bind
 --action-cache-path .github/cache/act/actions
 --artifact-server-path .github/cache/act/artifacts
 --artifact-server-port 23234

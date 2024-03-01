@@ -1,0 +1,22 @@
+version: 0.1
+downloads:
+  - name: phpstan
+    downloads:
+      - os:
+          linux: linux
+          macos: macos
+        cpu:
+          x86_64: x86_64
+          arm_64: arm64
+        url: https://github.com/matthewbaggett/packaged-tooling/releases/download/${version}/phpstan-8.2-${os}-${cpu}
+tools:
+  definitions:
+    - name: phpstan
+      download: phpstan
+      known_good_version: 0.0.1
+      environment:
+        - name: PATH
+          list: ["${tool}/bin"]
+      shims:
+        - name: phpstan
+          target: phpstan

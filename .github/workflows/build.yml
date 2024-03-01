@@ -1,0 +1,203 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/composite-actions/setup-spc/**
+      - .github/workflows/php.yml
+
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  extensions: bcmath,bz2,curl,dom,filter,gd,imagick,intl,ldap,mbstring,memcache,mongodb,opcache,openssl,phar,pgsql,redis,soap,tokenizer,xml,zlib,zip
+
+jobs:
+  php:
+    runs-on: ${{ matrix.build_os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        build_os: [ubuntu-22.04, macos-13, macos-14]
+        php: [8.1, 8.2, 8.3]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache ${{ github.workspace }}/static-php-cli
+        uses: actions/cache@v2
+        with:
+          path: ${{ github.workspace }}/static-php-cli
+          key: ${{ runner.os }}-${{ matrix.php }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.php }}-
+
+      - name: Get Envs
+        id: env
+        shell: bash
+        run: |
+          ARCH=$(uname -m)
+          echo "Arch: $ARCH"
+          SPC_BIN=$(echo "spc-${{ matrix.php }}-${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          OUTPUT_BIN=$(echo "php-${{ matrix.php }}-${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          echo "Output binary: $OUTPUT_BIN"
+          CACHE_KEY=$(echo "${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          {
+            echo "arch=$ARCH"
+            echo "spc_bin=$SPC_BIN"
+            echo "output_bin=$OUTPUT_BIN"
+            echo "cache_key=$CACHE_KEY"
+          } >> $GITHUB_OUTPUT
+
+      - uses: ./.github/composite-actions/setup-spc
+        with:
+          php_version: ${{ matrix.php }}
+          php_extensions: ${{ env.extensions }}
+          spc_build_target: all
+
+      - name: Push ${{ steps.env.outputs.output_bin }} as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.env.outputs.output_bin }}
+          path: ${{ github.workspace }}/static-php-cli/bin/php
+
+      - name: Debug
+        run: |
+          ls -lah ${{ github.workspace }}
+
+      - name: Store PHP Runtime Environment (environment-${{ matrix.php }}-${{ runner.os }})
+        uses: actions/upload-artifact@v3
+        with:
+          name: environment-${{ matrix.php }}-${{ runner.os }}
+          path: ${{ github.workspace }}
+
+  phars:
+    runs-on: ${{ matrix.build_os }}
+    needs:
+      - php
+    strategy:
+      fail-fast: false
+      matrix:
+        build_os: [ubuntu-22.04, macos-13, macos-14]
+        php: [8.1, 8.2, 8.3]
+        phar:
+          - php-cs-fixer
+          - composer
+        include:
+          - phar: php-cs-fixer
+            source: http://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/download/v3.49.0/php-cs-fixer.phar
+            #extensions: filter,tokenizer,dom,mbstring
+          - phar: composer
+            source: https://getcomposer.org/download/2.7.1/composer.phar
+          - phar: phpstan
+            source: https://github.com/phpstan/phpstan/releases/download/1.10.59/phpstan.phar
+
+    steps:
+      - name: Get Envs
+        id: env
+        shell: bash
+        run: |
+          ARCH=$(uname -m)
+          echo "Arch: $ARCH"
+          SPC_BIN=$(echo "${{ matrix.phar}}-php${{ matrix.php }}-${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          OUTPUT_BIN=$(echo "${{ matrix.phar}}-php${{ matrix.php }}-${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          echo "Output binary: $OUTPUT_BIN"
+          CACHE_KEY=$(echo "${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
+          {
+            echo "arch=$ARCH"
+            echo "spc_bin=$SPC_BIN"
+            echo "output_bin=$OUTPUT_BIN"
+            echo "cache_key=$CACHE_KEY"
+          } >> $GITHUB_OUTPUT
+
+      - name: Retrieve PHP Runtime Environment (environment-${{ matrix.php }}-${{ runner.os }})
+        uses: actions/download-artifact@v3
+        with:
+          name: environment-${{ matrix.php }}-${{ matrix.os }}
+          path: ${{ github.workspace }}
+
+      - name: Download PHAR (${{ matrix.source }})
+        shell: bash
+        run: |
+          mkdir -p ${{ github.workspace }}/phars;
+          echo "Downloading ${{ matrix.phar }}.phar from ${{ matrix.source }}";
+          curl -L \
+            -o ${{ github.workspace }}/phars/${{ matrix.phar }}.phar \
+            ${{ matrix.source }}
+
+      - name: Build ${{ matrix.phar }}.phar
+        shell: bash
+        working-directory: static-php-cli
+        run: |
+          mkdir -p ${{ github.workspace }}/out || true;
+          bin/spc \
+            micro:combine \
+            ${{ github.workspace }}/phars/${{ matrix.phar }}.phar \
+            --output ${{ github.workspace }}/out/${{ steps.env.outputs.output_bin }}
+
+      - name: Push ${{ steps.env.outputs.output_bin }} as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.env.outputs.output_bin }}
+          path: |
+            ${{ github.workspace }}/out/${{ steps.env.outputs.output_bin }}
+
+  release-create:
+    runs-on: ubuntu-22.04
+    needs:
+      - php
+      - phars
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+
+  release-populate:
+    runs-on: ubuntu-22.04
+    needs:
+      - release-create
+    strategy:
+      matrix:
+        os:
+          - linux
+          - macos
+        arch:
+          - x86_64
+          - arm64
+        php: [8.1, 8.2, 8.3]
+        binary:
+          - php
+          - php-cs-fixer
+          - composer
+    steps:
+      - name: Retrieve ${{ matrix.binary }}-php${{ matrix.php }}-${{ matrix.os }}-${{ matrix.arch }}
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ matrix.binary }}-php${{ matrix.php }}-${{ matrix.os }}-${{ matrix.arch }}
+          path: ${{ github.workspace }}/${{ matrix.binary }}-php${{ matrix.php }}-${{ matrix.os }}-${{ matrix.arch }}
+
+      - name: Upload Release of (${{ matrix.binary }}-php${{ matrix.php }}-${{ matrix.os }}-${{ matrix.arch }})
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.release-create.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/${{ matrix.binary }}-php${{ matrix.php }}-${{ matrix.os }}-${{ matrix.arch }}
+          asset_name: ${{ matrix.binary }}-php${{ matrix.php }}-${{ matrix.os }}-${{ matrix.arch }}
+          asset_content_type: application/zip
