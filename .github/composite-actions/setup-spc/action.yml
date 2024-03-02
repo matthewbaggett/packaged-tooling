@@ -26,7 +26,6 @@ runs:
         ARCH=$(uname -m)
         CACHE_KEY=$(echo "${{ runner.os }}-$ARCH" | tr '[:upper:]' '[:lower:]')
         {
-
           echo "cache_key=$CACHE_KEY"
         } >> $GITHUB_OUTPUT
 

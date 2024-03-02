@@ -29,6 +29,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
 
       - name: Cache ${{ github.workspace }}/static-php-cli
         uses: actions/cache@v2
@@ -59,7 +62,7 @@ jobs:
         with:
           php_version: ${{ matrix.php }}
           php_extensions: ${{ env.extensions }}
-          spc_build_target: all
+          spc_build_target: micro
 
       - name: Push ${{ steps.env.outputs.output_bin }} as artifact
         uses: actions/upload-artifact@v3
@@ -75,7 +78,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: environment-${{ matrix.php }}-${{ runner.os }}
-          path: ${{ github.workspace }}
+          path: |
+            ${{ github.workspace }}
+            !${{ github.workspace }}/static-php-cli/source/postgresql
 
   phars:
     runs-on: ${{ matrix.build_os }}
