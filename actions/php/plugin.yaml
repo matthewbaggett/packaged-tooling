@@ -1,27 +1,26 @@
 version: 0.1
 actions:
   definitions:
-
     - id: php-automatic-composer-install-on-change
-      display_name: "Composer Install when composer.json or composer.lock change"
+      description: "Composer Install when composer.json or composer.lock change"
       triggers:
         - files: [composer.json, composer.lock]
       run: composer install ${target}
 
     - id: php-automatic-composer-install-on-update
-      display_name: "Composer Install when updating from git"
+      description: "Composer Install when updating from git"
       triggers:
-        - git_hooks: [ post-checkout, post-merge ]
+        - git_hooks: [post-checkout, post-merge]
       run: composer install ${target}
 
     - id: php-automatic-composer-update-daily
-      display_name: "Composer Update Daily"
+      description: "Composer Update Daily"
       triggers:
         - schedule: 24h
       run: composer update ${target}
 
     - id: php-automatic-php-cs-fixer
-      display_name: "Automatically run PHP-CS-Fixer when files change"
+      description: "Automatically run PHP-CS-Fixer when files change"
       triggers:
         - files: ["**.php"]
       run: php-cs-fixer fix ${target}
