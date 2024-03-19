@@ -11,7 +11,7 @@ downloads:
         url: https://github.com/matthewbaggett/packaged-tooling/releases/download/${version}/php-8.2-${os}-${cpu}
 tools:
   definitions:
-    - name: php
+    - name: php-cli
       download: php-cli
       known_good_version: 0.0.1
       environment:
