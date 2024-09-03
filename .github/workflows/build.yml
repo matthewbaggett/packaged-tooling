@@ -122,7 +122,7 @@ jobs:
           } >> $GITHUB_OUTPUT
 
       - name: Retrieve PHP Runtime Environment (environment-${{ matrix.php }}-${{ runner.os }})
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: environment-${{ matrix.php }}-${{ matrix.os }}
           path: ${{ github.workspace }}
@@ -191,7 +191,7 @@ jobs:
           - composer
     steps:
       - name: Retrieve ${{ matrix.binary }}-php${{ matrix.php }}-${{ matrix.os }}-${{ matrix.arch }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: ${{ matrix.binary }}-php${{ matrix.php }}-${{ matrix.os }}-${{ matrix.arch }}
           path: ${{ github.workspace }}/${{ matrix.binary }}-php${{ matrix.php }}-${{ matrix.os }}-${{ matrix.arch }}
